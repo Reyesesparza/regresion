@@ -121,8 +121,56 @@ nuevo
 predict(object=mod, newdata=nuevo)
 
 
+file <- "https://raw.githubusercontent.com/fhernanb/datos/master/propelente"
+datos <- read.table(file=file, header=TRUE)
+
+mod1 <- lm(Resistencia ~ Edad, data=datos)
+nuevo <- data.frame(Edad=13.3625)
+predict(object=mod1, newdata=nuevo, interval="confidence", level=0.95)
+nuevo <- data.frame(Edad=10)
+predict(object=mod1, newdata=nuevo, interval="prediction", level=0.95)
+
+
+future_y <- predict(object=mod1, interval="prediction", level=0.95)
+nuevos_datos <- cbind(datos, future_y)
+
+
+
+###agregar intervalo de confianza
+ggplot(nuevos_datos, aes(x=Edad, y=Resistencia))+
+  geom_point() +
+  geom_line(aes(y=lwr), color="red", linetype="dashed") +
+  geom_line(aes(y=upr), color="red", linetype="dashed") +
+  geom_smooth(method=lm, formula=y~x, se=TRUE, level=0.95, col='blue', fill='pink2') +
+  theme_light()
+
+
+
+
+gen_dat <- function(n) {
+  varianza <- 16
+  x <- runif(n=n, min=-5, max=6)
+  media <- 4 - 6 * x
+  y <- rnorm(n=n, mean=media, sd=sqrt(varianza))
+  marco_datos <- data.frame(y=y, x=x)
+  return(marco_datos)
+}
+
+
+gen_dat(5)
+gen_dat(200)
+
+
+datos <- gen_dat(n=200)
+
+
+ggplot(datos, aes(x=x, y=y)) +
+  geom_point() + theme_light()
 
 
 
 
 
+mod <- lm(y ~ x, data=datos)
+theta_hat <- c(coef(mod), sigma=summary(mod)$sigma)
+theta_hat
