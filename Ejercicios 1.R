@@ -174,3 +174,72 @@ ggplot(datos, aes(x=x, y=y)) +
 mod <- lm(y ~ x, data=datos)
 theta_hat <- c(coef(mod), sigma=summary(mod)$sigma)
 theta_hat
+
+
+
+##SImulacion
+
+datos <- cars[1:5, ]
+mod <- lm(dist ~ speed, data=datos)
+simulate(object=mod, nsim=1, seed=1234)
+
+
+
+file <- "https://raw.githubusercontent.com/fhernanb/datos/master/propelente"
+datos <- read.table(file=file, header=TRUE)
+mod1 <- lm(Resistencia ~ Edad, data=datos)
+
+confint(object = mod1, parm = "Edad", level = 0.95)
+confint(object = mod1, level = 0.95)
+
+
+
+
+Precio <- c(12, 15, 25, 11, 16, 7)
+Area <- c(3, 4, 1, 6, 5, 3)
+Pisci <- factor(x=c('Grande', 'Sin', 'Pequena', 'Pequena', 'Sin', 'Grande'),
+                levels=c('Sin','Pequena','Grande'))
+
+
+# se usa model:matriz para obtener las variables indicadoreas
+
+
+
+model.matrix(Precio ~ Area + Pisci)
+
+
+
+require(MASS)
+str(Cars93[, c('Price', 'EngineSize', 'Type')])
+
+
+
+library(ggplot2)
+ggplot(Cars93, aes(x=EngineSize, y=Price, color=Type)) + 
+  geom_point() + theme_light()
+
+
+
+
+mod <- lm(Price ~ EngineSize + Type, data=Cars93)
+summary(mod)
+
+
+require(MASS)
+data("Cars93")
+mod <- lm(Price ~ EngineSize + Type, data=Cars93)
+anova(mod)
+
+
+require(MASS)
+data("Cars93")
+mod_redu <- lm(Price ~ EngineSize, data=Cars93)
+mod_comp <- lm(Price ~ EngineSize + Type, data=Cars93)
+anova(mod_redu, mod_comp)
+
+
+set.seed(8867)  # this makes the example exactly reproducible
+y <- c(rnorm(10, mean=0,    sd=1),
+       rnorm(10, mean=-0.5, sd=1),
+       rnorm(10, mean=0.5,  sd=1))
+g <- rep(c("A", "B", "C"), each=10)
