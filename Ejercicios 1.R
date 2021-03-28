@@ -629,3 +629,258 @@ cbind(estadistico, valorP)
 library(car)
 ncvTest(mod)
 
+
+
+## generate regressor
+x <- rep(c(-1, 1), 50)
+
+## generate the AR(1) error terms with parameter rho = 0 (white noise)
+err1 <- rnorm(100)
+## generate dependent variable
+y1 <- 1 + x + err1
+library(lmtest)
+mod1 <- lm(y1 ~ x)
+dwtest(mod1) ## perform Durbin-Watson test
+
+
+plot(residuals(mod1), pch=19, col="deepskyblue1")
+
+## generate the AR(1) error terms with parameter rho = 0.9 respectively
+err2 <- stats::filter(x=err1, filter=0.9, method="recursive")
+## generate dependent variable
+y2 <- 1 + x + err2
+
+mod2 <- lm(y2 ~ x)
+dwtest(mod2) ## perform Durbin-Watson test
+
+
+plot(residuals(mod2), pch=19, col="tomato")
+
+
+
+library(lmtest)
+mod1 <- lm(y1 ~ x)
+bgtest(mod1) ## perform Durbin-Watson test
+
+
+mod2 <- lm(y2 ~ x)
+bgtest(mod2) ## perform Durbin-Watson test
+
+
+##Modelos Polinomiales
+
+
+
+
+conc <- c(1, 1.5, 2, 3, 4, 4.5, 5, 5.5, 6, 6.5, 7, 8, 9, 10, 11, 12, 13, 14, 15)
+resis <- c(6.3, 11.1, 20, 24, 26.1, 30, 33.8, 34, 38.1, 39.9, 42, 46.1, 53.1, 
+           52, 52.5, 48, 42.8, 27.8, 21.9)
+datos <- data.frame(concentracion=conc, resistencia=resis)
+
+
+library(ggplot2)
+ggplot(datos, aes(x=concentracion, y=resistencia)) + 
+  geom_point() + theme_light()
+
+
+mod1 <- lm(resistencia ~ concentracion, data=datos)
+mod2 <- lm(resistencia ~ concentracion + I(concentracion^2), data=datos)
+
+
+ggplot(datos, aes(x=concentracion, y=resistencia)) + 
+  geom_point() +
+  geom_smooth(method='lm', formula=y~x, se=FALSE, col='dodgerblue1') +
+  geom_smooth(method='lm', formula=y~x+I(x^2), se=FALSE, col='tomato') +
+  theme_light()
+
+
+
+anova(mod1, mod2)
+
+anova(mod1, mod2)
+
+par(mfrow=c(1, 2))
+plot(mod1, which=1, caption='Modelo lineal')
+plot(mod2, which=1, caption='Modelo cuadratico')
+
+
+
+
+drop <- c(8.33, 8.23, 7.17, 7.14, 7.31, 7.60, 7.94, 8.30, 8.76, 8.71, 9.71,
+          10.26, 10.91, 11.67, 11.76, 12.81, 13.30, 13.88, 14.59,
+          14.05, 14.48, 14.92, 14.37, 14.63, 15.18, 14.51, 14.34, 
+          13.81, 13.79, 13.05, 13.04, 12.60, 12.05, 11.15, 11.15, 
+          10.14, 10.08,9.78,9.80,9.95,9.51)
+time <- seq(from=0, to=20, by=0.5)
+datos <- data.frame(time=time, drop=drop)
+
+
+
+plot(datos, ylab="Voltage drop", xlab="Time (seconds)", pch=19, ylim=c(0, 15), las=1)
+abline(v=6.5, lty="dotted", col='tomato')
+abline(v=13, lty="dotted", col='tomato')
+text(x=6.5, y=0.3, 't=6.5', col='tomato')
+text(x=13, y=0.3, 't=13', col='tomato')
+
+
+mod1 <- lm(drop ~ time + I(time^2) + I(time^3), data=datos)
+summary(mod1)
+
+
+
+xplus <- function(x) ifelse(x >= 0, x, 0)  # Auxiliar function
+time65 <- xplus(time - 6.5)               # New variable 1
+time13 <- xplus(time - 13)                 # New variable 2
+mod2 <- lm(drop ~ time + I(time^2) + I(time^3) + I(time65^3) + I(time13^3), data=datos)
+summary(mod2)
+
+
+
+plot(datos, ylab="Voltage drop", xlab="Time (seconds)", pch=19, ylim=c(0, 15), las=1)
+i <- order(time)
+lines(time[i], fitted(mod1)[i], col=2, lwd=3)
+lines(time[i], fitted(mod2)[i], col=4, lwd=3)
+legend("bottomright", lwd=3, col=c(4,2), bty="n",
+       legend=c("Cubic spline model", "Cubic polynomial model"))
+
+
+
+
+require(splines)
+mod3 <- lm(drop ~ bs(time, knots=c(6.5, 13), degree=3), data=datos)
+summary(mod3)
+
+
+
+
+plot(datos, ylab="Voltage drop", xlab="Time (seconds)", pch=19, ylim=c(0,15))
+lines(time[i], fitted(mod1)[i], col='red', lwd=3)
+lines(time[i], fitted(mod2)[i], col='blue', lwd=6)
+lines(time[i], fitted(mod3)[i], col='orange', lwd=1)
+legend("bottomright", lwd=c(3, 6, 2), col=c('red', 'blue', 'orange'),
+       legend=c("Cubic polynomial model", 
+                "Cubic spline manually",
+                "Using bs()"), bty="n")
+abline(v=c(6.5, 13), lty='dotted', col="tomato") # adding cutpoints
+
+
+
+
+library(MPV)
+colnames(softdrink) <- c('tiempo', 'cantidad', 'distancia')
+
+library(splines)
+
+mod1 <- lm(tiempo ~ cantidad + distancia, data=softdrink)
+mod2 <- lm(tiempo ~ bs(cantidad) + bs(distancia), data=softdrink)
+
+
+
+y_true <- softdrink$tiempo
+y_hat1 <- predict(mod1, newdata=softdrink)
+y_hat2 <- predict(mod2, newdata=softdrink)
+
+mse1 <- mean((y_true - y_hat1)^2)
+mse2 <- mean((y_true - y_hat2)^2)
+cbind(mse1, mse2)
+
+
+
+library(car)
+plot(prestige ~ income, xlab="Average Income",
+     ylab="Prestige", data=Prestige, pch=19)
+
+
+mod_lowess <- lowess(x=Prestige$income, y=Prestige$prestige, f=2/3)
+
+
+
+
+plot(prestige ~ income, xlab="Average Income",
+     ylab="Prestige", data=Prestige, pch=19)
+lines(mod_lowess, lwd=4, col='tomato')
+
+
+
+library(plotly)
+plot_ly(x=Prestige$income, 
+        y=Prestige$education, 
+        z=Prestige$prestige, type="scatter3d", color=Prestige$prestige) %>% 
+  layout(scene = list(xaxis = list(title = 'Income'),
+                      yaxis = list(title = 'Education'),
+                      zaxis = list(title = 'Prestige')))
+
+
+
+mod_loess <- loess(prestige ~ income + education, data=Prestige, 
+                   degree=2, span=0.75)
+
+
+library("plot3D")
+scatter3D(x=Prestige$income,
+          y=Prestige$education,
+          z=Prestige$prestige, ticktype="detailed", pch=20, 
+          bty="f", colkey=FALSE, phi=30, theta=45, type="h",
+          xlab='Income',
+          ylab='Education',
+          zlab='Prestige',
+          surf=list(x=inc, y=edu, z=fit.prestige,  
+                    NAcol="black", shade=0.1))
+
+
+
+temp <- c(200, 250, 200, 250, 189.65, 260.35, 225, 225, 225, 225, 225, 225)
+conc <- c(15, 15, 25, 25, 20, 20, 12.93, 27.07, 20, 20, 20, 20)
+rend <- c(43, 78, 69, 73, 48, 76, 65, 74, 76, 79, 83, 81)
+
+
+
+library(scatterplot3d)
+scatterplot3d
+
+
+
+mod <- lm(rend ~ temp + conc + I(temp^2) + I(conc^2) + temp * conc)
+
+
+
+
+# Se crean 30 valores de las variables para crear la rejilla
+Temperatura   <- seq(from=189.65, to=260.35, length.out=30)
+Concentracion <- seq(from=12.93, to=27.07, length.out=30)
+# Rend es la funcion a dibujar
+Rend <- function(temp, conc) {
+  res <- coef(mod) * c(1, temp, conc, temp^2, conc^2, temp * conc)
+  sum(res)
+}
+Rend <- Vectorize(Rend) # La funcion a dibujar debe estar vectorizada
+# La matriz Rendimiento con las alturas de la superficie se crea con outer
+Rendimiento <- outer(Temperatura, Concentracion, Rend)
+# Para dibujar la superficie de respuesta
+persp(x=Temperatura, y=Concentracion, z=Rendimiento,
+      theta=40, phi=30, ticktype = "detailed", col='salmon1')
+
+
+contour(x=Temperatura, y=Concentracion, z=Rendimiento,
+        nlevels=10, col=gray(0.3), lwd=2, lty='solid',
+        xlab='Temperatura', ylab='Concentracion', las=1)
+
+
+filled.contour(x=Temperatura, y=Concentracion, z=Rendimiento,
+               nlevels=10, xlab='Temperatura', ylab='Concentracion',
+               las=1, color.palette = cm.colors)
+
+
+minus_rend <- function(x) {
+  temp <- x[1]
+  conc <- x[2]
+  new.data <- data.frame(temp=c(1, temp), conc=c(1, conc))
+  -predict(mod, new.data)[2]
+}
+inicio <- c(192, 15)  # valores iniciales para la busqueda
+names(inicio) <- c('Temperatura', 'Concentracion') # Colocando nombres
+res <- nlminb(start=inicio, objective=minus_rend,
+              lower=c(189.65, 12.93), # minimos de las variables
+              upper=c(260.35, 27.07), # maximos de las variables
+              control=list(trace=0))
+res$par  # Valores optimos
