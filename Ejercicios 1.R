@@ -884,3 +884,174 @@ res <- nlminb(start=inicio, objective=minus_rend,
               upper=c(260.35, 27.07), # maximos de las variables
               control=list(trace=0))
 res$par  # Valores optimos
+
+
+library(MPV)  # Aqui estan los datos
+table.b3[22:26, ] # Can you see the missing values?
+
+datos <- table.b3[-c(23, 25), ]
+
+
+
+full.model <- lm(y ~ ., data=datos)
+summary(full.model)
+
+library(MASS)  # Para poder usar la funcion stepAIC
+modback <- stepAIC(full.model, trace=TRUE, direction="backward")
+
+
+modback$anova
+
+summary(modback)
+
+
+
+empty.model <- lm(y ~ 1, data=datos)
+horizonte <- formula(y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10 + x11)
+
+
+
+modforw <- stepAIC(empty.model, trace=FALSE, direction="forward", scope=horizonte)
+modforw$anova
+
+modforw <- update(modforw, y ~ x1)
+summary(modforw)
+
+
+modboth <- stepAIC(empty.model, trace=FALSE, direction="both", scope=horizonte)
+modboth$anova
+
+
+summary(modback)$adj.r.squared
+summary(modforw)$adj.r.squared
+
+
+mod1 <- lm(y ~ x2 + x5, data=datos)
+maximo <- formula(~ x1 + x2 + x3 + x4 + x5 + x6)
+addterm(mod1, scope=maximo)
+
+
+model <- lm(mpg ~ disp + hp + wt + qsec, data=mtcars)
+
+library(olsrr)
+res <- ols_step_all_possible(model)
+res
+
+plot(res)
+
+
+
+
+library(MPV) # Aqui estan los datos
+datos <- table.b3[-c(23, 25), ] # Eliminando 2 observaciones con NA
+modelo <- lm(y ~ x1 + x2 + x3 + x4 + x5 + x6 + x7 + x8 + x9 + x10 + x11,
+             data=datos)
+
+library(mixlm)
+backward(modelo, alpha=0.04)
+
+
+
+
+#### Multicolinealidad ###
+
+gen_dat <- function(n) {
+  x1 <- runif(n=n, min=0, max=10)
+  x2 <- x1 * 2 + rnorm(n=n, sd=0.01) # x2 es el doble de x1 + ruido
+  y <- rnorm(n=n, mean= - 3 + 2 * x1 - 4 * x2, sd=2)
+  data.frame(y, x1, x2)
+}
+
+
+
+set.seed(12345)
+datos <- gen_dat(n=40)
+datos1 <- datos[1:20, ]
+datos2 <- datos[21:40, ]
+
+
+
+mod1 <- stats::lm(y ~ x1 + x2, data=datos1)
+summary(mod1)
+mod2 <- stats::lm(y ~ x1 + x2, data=datos2)
+summary(mod2)
+
+
+
+mtcars %>% cor(method="pearson") %>% round(digits=2) -> mat_cor
+mat_cor
+
+
+library(corrplot)
+
+
+corrplot(mat_cor, type="upper", order="hclust", tl.col="black", tl.srt=45)
+
+
+
+gen_dat <- function(n) {
+  x1 <- sample(5:25, size=n, replace=TRUE)
+  x2 <- rpois(n, lambda=5)
+  x3 <- rbinom(n, size=10, prob=0.4)
+  x4 <- rbeta(n=n, shape1=0.5, shape2=0.7)
+  ruido1 <- runif(n=n, min=-0.5, max=0.5)
+  ruido2 <- runif(n=n, min=-0.5, max=0.5)
+  x5 <- x1 - 3 * x2 + ruido1
+  x6 <- x2 - 4 * x3 + ruido2
+  y <- rnorm(n=n, mean= - 3 + 2 * x1 - 4 * x2, sd=2)
+  data.frame(y, x1, x2, x3, x4, x5, x6)
+}
+
+
+
+
+datos <- gen_dat(n=30)
+mod <- lm(y ~ ., data=datos)
+car::vif(mod)
+
+
+
+
+library(dplyr)
+datos %>% select(-y) %>% cor(method="pearson") %>% round(digits=2) -> mat_cor
+library(corrplot)
+corrplot(mat_cor, type="upper", tl.col="black", tl.srt=45)
+
+
+
+
+M <- matrix(c(1, 2,
+              1, 5), nrow=2, byrow=TRUE)
+M
+
+
+
+datos <- data.frame(Precio = c(12, 15, 25, 11, 16, 7),
+                    Area = c(3, 4, 1, 6, 5, 3), 
+                    Pisci = factor(x=c('Grande', 'Sin', 'Pequena', 'Pequena', 'Sin', 'Grande'),
+                                   levels=c('Sin','Pequena','Grande')))
+datos
+
+
+
+form <- formula(Precio ~ Area + Pisci)
+X <- model.matrix(object=form, data=datos)
+X
+
+
+mf <- model.frame(Precio ~ Area + Pisci, data=datos)
+y <- model.extract(mf, "response")
+y
+
+
+
+y <- c(4, 2, 3, 1, 5)
+x <- c(2, 5, 7, 9, 1)
+
+
+X <- cbind(intercepto=1, variable=x)
+X
+
+
+fit <- lm.fit(x=X, y=y)
+coef(fit)
